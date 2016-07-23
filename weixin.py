@@ -101,6 +101,7 @@ class WebWeixin(object):
         self.autoReplyMode = True
         self.syncHost = ''
         self.msg_history = {}
+        self.replay_revoke_of_group = False
         self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36'
         self.interactive = False
         self.autoOpen = False
@@ -776,6 +777,9 @@ class WebWeixin(object):
                 self._showMsg(raw_msg)
                 self._safe_open(video)
             elif msgType == 10002:
+                if not self.replay_revoke_of_group:
+                    if msg['raw_msg']['FromUserName'][:2] == '@@':
+                        continue
                 msgids = re.findall('&lt;msgid&gt;(.*)&lt;/msgid&gt;', msg['Content'])
                 if len(msgids) == 1 and msgids[0] in self.msg_history:
                     content = self.msg_history[msgids[0]]['Content']
