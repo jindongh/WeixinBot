@@ -778,7 +778,7 @@ class WebWeixin(object):
                 self._safe_open(video)
             elif msgType == 10002:
                 if not self.replay_revoke_of_group:
-                    if msg['raw_msg']['FromUserName'][:2] == '@@':
+                    if msg['FromUserName'][:2] == '@@':
                         continue
                 msgids = re.findall('&lt;msgid&gt;(.*)&lt;/msgid&gt;', msg['Content'])
                 if len(msgids) == 1 and msgids[0] in self.msg_history:
