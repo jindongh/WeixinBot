@@ -98,8 +98,9 @@ class WebWeixin(object):
         self.GroupMemeberList = []  # 群友
         self.PublicUsersList = []  # 公众号／服务号
         self.SpecialUsersList = []  # 特殊账号
-        self.autoReplyMode = False
+        self.autoReplyMode = True
         self.syncHost = ''
+        self.msg_history = {}
         self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36'
         self.interactive = False
         self.autoOpen = False
@@ -685,6 +686,16 @@ class WebWeixin(object):
             logging.info('%s %s -> %s: %s' % (message_id, srcName.strip(),
                                               dstName.strip(), content.replace('<br/>', '\n')))
 
+    def addHistory(self, msg):
+        self.msg_history[msg['MsgId']] = {
+                'CreateTime': msg['CreateTime'],
+                'Content': msg['Content']
+                }
+        expire = time.time() - 30 * 60 # 30min
+        for msgid in self.msg_history:
+            if self.msg_history[msgid]['CreateTime'] < expire:
+                del self.msg_history[msgid]
+
     def handleMsg(self, r):
         for msg in r['AddMsgList']:
             print '[*] 你有新的消息，请注意查收'
@@ -704,15 +715,8 @@ class WebWeixin(object):
 
             if msgType == 1:
                 raw_msg = {'raw_msg': msg}
+                self.addHistory(msg)
                 self._showMsg(raw_msg)
-                if self.autoReplyMode:
-                    ans = self._xiaodoubi(content) + '\n[微信机器人自动回复]'
-                    if self.webwxsendmsg(ans, msg['FromUserName']):
-                        print '自动回复: ' + ans
-                        logging.info('自动回复: ' + ans)
-                    else:
-                        print '自动回复失败'
-                        logging.info('自动回复失败')
             elif msgType == 3:
                 image = self.webwxgetmsgimg(msgid)
                 raw_msg = {'raw_msg': msg,
@@ -772,6 +776,11 @@ class WebWeixin(object):
                 self._showMsg(raw_msg)
                 self._safe_open(video)
             elif msgType == 10002:
+                msgids = re.findall('&lt;msgid&gt;(.*)&lt;/msgid&gt;', msg['Content'])
+                if len(msgids) == 1 and msgids[0] in self.msg_history:
+                    content = self.msg_history[msgids[0]]['Content']
+                    ans = '你撤回了一条消息 %s' % content
+                    self.webwxsendmsg(ans, msg['FromUserName'])
                 raw_msg = {'raw_msg': msg, 'message': '%s 撤回了一条消息' % name}
                 self._showMsg(raw_msg)
             else:
