@@ -779,7 +779,7 @@ class WebWeixin(object):
                 msgids = re.findall('&lt;msgid&gt;(.*)&lt;/msgid&gt;', msg['Content'])
                 if len(msgids) == 1 and msgids[0] in self.msg_history:
                     content = self.msg_history[msgids[0]]['Content']
-                    ans = '你撤回了一条消息 %s' % content
+                    ans = '%s撤回了一条消息:%s' % (name,content)
                     self.webwxsendmsg(ans, msg['FromUserName'])
                 raw_msg = {'raw_msg': msg, 'message': '%s 撤回了一条消息' % name}
                 self._showMsg(raw_msg)
