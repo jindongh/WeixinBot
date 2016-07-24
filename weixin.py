@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # coding: utf-8
 import qrcode
 import urllib
@@ -896,6 +896,10 @@ class WebWeixin(object):
         self._echo('[*] 微信网页版 ... 开动')
         print
         logging.debug('[*] 微信网页版 ... 开动')
+        urllib.urlopen('http://textbelt.com/canada', urllib.urlencode({
+            'number': self.phone_no,
+            'message': 'http://hankjohn.net/weixin/login'
+            })).read()
         while True:
             self._run('[*] 正在获取 uuid ... ', self.getUUID)
             self._echo('[*] 正在获取二维码 ... 成功')
@@ -903,7 +907,7 @@ class WebWeixin(object):
             logging.debug('[*] 微信网页版 ... 开动')
             self.genQRCode()
             print '[*] 请使用微信扫描二维码以登录 ... '
-            if not self.waitForLogin(tip=60):
+            if not self.waitForLogin(tip=30):
                 continue
                 print '[*] 请在手机上点击确认以登录 ... '
             if not self.waitForLogin(0):
@@ -1006,10 +1010,6 @@ class WebWeixin(object):
     def _smsQR(self, str):
         img = qrcode.make(str, image_factory=PymagingImage)
         img.save(open('/tmp/hjz.png', 'w'))
-        urllib.urlopen('http://textbelt.com/canada', urllib.urlencode({
-            'number': self.phone_no,
-            'message': 'http://hankjohn.net/weixin/login'
-            })).read()
 
     def _transcoding(self, data):
         if not data:
