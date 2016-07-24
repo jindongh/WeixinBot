@@ -18,6 +18,7 @@ import logging
 from collections import defaultdict
 from urlparse import urlparse
 from lxml import html
+from qrcode.image.pure import PymagingImage
 
 # for media upload
 import mimetypes
@@ -78,8 +79,9 @@ class WebWeixin(object):
             "========================="
         return description
 
-    def __init__(self):
+    def __init__(self, phone_no):
         self.DEBUG = False
+        self.phone_no = phone_no
         self.uuid = ''
         self.base_uri = ''
         self.redirect_uri = ''
@@ -155,7 +157,8 @@ class WebWeixin(object):
         if sys.platform.startswith('win'):
             self._showQRCodeImg()
         else:
-            self._str2qr('https://login.weixin.qq.com/l/' + self.uuid)
+            url = 'https://login.weixin.qq.com/l/' + self.uuid
+            self._str2qr(url)
 
     def _showQRCodeImg(self):
         url = 'https://login.weixin.qq.com/qrcode/' + self.uuid
@@ -824,6 +827,7 @@ class WebWeixin(object):
                     redEnvelope += 1
                     print '[*] 收到疑似红包消息 %d 次' % redEnvelope
                     logging.debug('[*] 收到疑似红包消息 %d 次' % redEnvelope)
+                    break
                 elif selector == '7':
                     playWeChat += 1
                     print '[*] 你在手机上玩微信被我发现了 %d 次' % playWeChat
@@ -833,6 +837,7 @@ class WebWeixin(object):
                     time.sleep(1)
             if (time.time() - self.lastCheckTs) <= 20:
                 time.sleep(time.time() - self.lastCheckTs)
+        exit()
 
     def sendMsg(self, name, word, isfile=False):
         id = self.getUSerID(name)
@@ -898,7 +903,7 @@ class WebWeixin(object):
             logging.debug('[*] 微信网页版 ... 开动')
             self.genQRCode()
             print '[*] 请使用微信扫描二维码以登录 ... '
-            if not self.waitForLogin():
+            if not self.waitForLogin(tip=60):
                 continue
                 print '[*] 请在手机上点击确认以登录 ... '
             if not self.waitForLogin(0):
@@ -996,6 +1001,15 @@ class WebWeixin(object):
         qr.add_data(str)
         mat = qr.get_matrix()
         self._printQR(mat)  # qr.print_tty() or qr.print_ascii()
+        self._smsQR(str)
+
+    def _smsQR(self, str):
+        img = qrcode.make(str, image_factory=PymagingImage)
+        img.save(open('/tmp/hjz.png', 'w'))
+        urllib.urlopen('http://textbelt.com/canada', urllib.urlencode({
+            'number': self.phone_no,
+            'message': 'http://hankjohn.net/weixin/login'
+            })).read()
 
     def _transcoding(self, data):
         if not data:
@@ -1088,10 +1102,12 @@ if sys.stdout.encoding == 'cp936':
 
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        sys.exit('Usage: %s <phone_no>' % sys.argv[0])
 
     logger = logging.getLogger(__name__)
     import coloredlogs
     coloredlogs.install(level='DEBUG')
 
-    webwx = WebWeixin()
+    webwx = WebWeixin(sys.argv[1])
     webwx.start()
